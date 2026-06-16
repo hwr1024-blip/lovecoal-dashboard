@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>현장 활동 참여 신청 대시보드</title>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+    <style>
+        /* 기본 스타일: 흰색 배경, 검은색 폰트 */
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; background-color: #FFFFFF; color: #000000; padding: 20px 15px; line-height: 1.4; }
+        h2 { text-align: center; font-size: 1.2rem; font-weight: 700; margin-bottom: 15px; letter-spacing: -0.5px; }
+        
+        /* 상단 미리보기 */
+        .preview-container { width: 100%; margin-bottom: 30px; border-top: 2px solid #000000; overflow-x: auto; }
+        table { width: 100%; table-layout: fixed; border-collapse: collapse; font-size: clamp(9px, 2.3vw, 13px); text-align: center; }
+        th, td { border-bottom: 1px solid #E4E4E7; border-right: 1px solid #E4E4E7; padding: 8px 2px; height: 38px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        th { background-color: #F4F4F5; font-weight: 700; border-bottom: 1px solid #A1A1AA; }
+        td:last-child, th:last-child { border-right: none; }
+        .cell-empty { background-color: #FFFFFF; }
+        .cell-filled { background-color: #FFFBEB; font-weight: bold; }
+        .cell-blocked { background-color: #EF4444; color: #FFFFFF; }
+
+        /* 컨트롤 영역 */
+        .controls { max-width: 440px; margin: 0 auto 25px; display: flex; flex-direction: column; gap: 12px; }
+        .input-group { display: flex; gap: 8px; }
+        input[type="text"], select { flex: 1; padding: 12px; border: 1px solid #000000; border-radius: 4px; font-size: 15px; outline: none; background-color: #FFFFFF; color: #000000; }
+        button.action-btn { padding: 0 24px; background-color: #000000; color: #FFFFFF; border: 1px solid #000000; border-radius: 4px; font-size: 15px; font-weight: 700; cursor: pointer; }
+        
+        /* 상세 리스트 */
+        .slots-container { max-width: 440px; margin: 0 auto; display: flex; flex-direction: column; gap: 8px; }
+        .slot-row { display: flex; justify-content: space-between; align-items: center; padding: 12px 16px; border: 1px solid #E4E4E7; border-radius: 6px; font-size: 15px; background-color: #FFFFFF; }
+        .slot-filled { background-color: #FFFBEB; border-color: #FDE68A; }
+        .slot-blocked { background-color: #EF4444; border-color: #EF4444; color: #FFFFFF; }
+        .slot-btn { background-color: #000000; color: #FFFFFF; border: 1px solid #000000; padding: 8px 16px; border-radius: 4px; font-size: 14px; font-weight: 700; cursor: pointer; }
+        .slot-btn:disabled { background-color: transparent; border-color: transparent; color: #71717A; cursor: not-allowed; }
+        .slot-blocked .slot-btn:disabled { color: #FFFFFF; opacity: 0.9; }
+        .info-text { text-align: center; font-size: 11px; color: #71717A; margin-top: 20px; }
+    </style>
+</head>
+<body>
+
+    <h2>전체 현황 미리보기</h2>
+    <div class="preview-container">
+        <table id="previewTable"></table>
+    </div>
+
+    <div class="controls">
+        <div class="input-group">
+            <input type="text" id="userName" placeholder="참여자 이름 입력">
+            <button class="action-btn" id="inputBtn">입력</button>
+        </div>
+        <select id="regionSelect" onchange="renderSlots()">
+            <option>로딩 중...</option>
+        </select>
+    </div>
+
+    <div class="slots-container" id="slotsContainer"></div>
+    <p class="info-text">※ 확정된 이름(미색)은 수정이 불가능합니다.</p>
+
+    <script>
+        // 파이어베이스 고유 열쇠 연결
+        const firebaseConfig = {
+            apiKey: "AIzaSyBJanaTDh4Z_J4wXYydOJF_zBWTRI1tjyk",
+            authDomain: "lovecoal-reservations.firebaseapp.com",
+            projectId: "lovecoal-reservations",
+            storageBucket: "lovecoal-reservations.firebasestorage.app",
+            messagingSenderId: "543602764624",
+            appId: "1:543602764624:web:4526b9b02a800720a25a55",
+            measurementId: "G-5DRVFDSZ3N"
+        };
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+
+        // 관리 데이터 (이제 파이어베이스에서 불러옵니다)
+        let regions = [];
+        let maxSlots = 5;
+        let currentData = {};
+        let blockedCells = []; 
+
+        // 1. [핵심] 관리자 설정 실시간 불러오기
+        db.collection("settings").doc("config").onSnapshot((doc) => {
+            if (doc.exists) {
+                regions = doc.data().regions || [];
+                maxSlots = doc.data().maxSlots || 5;
+            } else {
+                // 파이어베이스에 설정 파일이 없으면 자동으로 최초 1회 생성해줍니다.
+                regions = ["상계동", "도봉동", "개포동", "삼성동", "방배동"];
+                maxSlots = 5;
+                db.collection("settings").doc("config").set({
+                    regions: regions,
+                    maxSlots: maxSlots
+                });
+            }
+
+            // 드롭다운 메뉴 업데이트
+            const selectEl = document.getElementById('regionSelect');
+            selectEl.innerHTML = "";
+            regions.forEach(region => {
+                let opt = document.createElement('option');
+                opt.value = region;
+                opt.innerText = region;
+                selectEl.appendChild(opt);
+            });
+
+            renderPreview();
+            renderSlots();
+        });
+
+        // 2. 예약 현황 실시간 불러오기
+        db.collection("reservations").onSnapshot((snapshot) => {
+            currentData = {};
+            blockedCells = [];
+            snapshot.forEach((doc) => {
+                const docData = doc.data();
+                if (docData.isBlocked) {
+                    blockedCells.push(doc.id);
+                } else {
+                    currentData[doc.id] = docData.name;
+                }
+            });
+            renderPreview();
+            renderSlots();
+        });
+
+        // 상단 표 그리기
+        function renderPreview() {
+            const table = document.getElementById('previewTable');
+            table.innerHTML = "";
+            if (regions.length === 0) return;
+            
+            let thead = document.createElement('tr');
+            regions.forEach(region => {
+                let th = document.createElement('th');
+                th.innerText = region;
+                thead.appendChild(th);
+            });
+            table.appendChild(thead);
+
+            for (let i = 1; i <= maxSlots; i++) {
+                let tr = document.createElement('tr');
+                regions.forEach(region => {
+                    let td = document.createElement('td');
+                    const slotId = `${region}_${i}`;
+                    
+                    if (blockedCells.includes(slotId)) {
+                        td.className = "cell-blocked";
+                    } else if (currentData[slotId]) {
+                        td.innerText = currentData[slotId];
+                        td.className = "cell-filled";
+                    } else {
+                        td.className = "cell-empty";
+                    }
+                    tr.appendChild(td);
+                });
+                table.appendChild(tr);
+            }
+        }
+
+        // 하단 리스트 그리기
+        function renderSlots() {
+            const container = document.getElementById('slotsContainer');
+            container.innerHTML = "";
+            const selectedRegion = document.getElementById('regionSelect').value;
+            if (!selectedRegion) return;
+
+            for (let i = 1; i <= maxSlots; i++) {
+                const slotId = `${selectedRegion}_${i}`;
+                const row = document.createElement('div');
+                
+                if (blockedCells.includes(slotId)) {
+                    row.className = 'slot-row slot-blocked';
+                    row.innerHTML = `<span><b>${i}</b>. 입력 불가</span><button class="slot-btn" disabled>제한</button>`;
+                } else if (currentData[slotId]) {
+                    row.className = 'slot-row slot-filled';
+                    row.innerHTML = `<span><b>${i}</b>. ${currentData[slotId]}</span><button class="slot-btn" disabled>확정</button>`;
+                } else {
+                    row.className = 'slot-row';
+                    row.innerHTML = `<span><b>${i}</b>. 비어있음</span><button class="slot-btn" onclick="reserveSlot('${slotId}')">선택</button>`;
+                }
+                container.appendChild(row);
+            }
+        }
+
+        // 선착순 예약 로직
+        async function reserveSlot(slotId) {
+            const nameInput = document.getElementById('userName').value.trim();
+            if (!nameInput) {
+                alert("이름을 먼저 입력해주세요!");
+                document.getElementById('userName').focus();
+                return;
+            }
+
+            const docRef = db.collection("reservations").doc(slotId);
+            try {
+                await db.runTransaction(async (transaction) => {
+                    const doc = await transaction.get(docRef);
+                    if (doc.exists) throw "간발의 차이로 마감되었습니다.";
+                    transaction.set(docRef, { 
+                        name: nameInput,
+                        timestamp: firebase.firestore.FieldValue.serverTimestamp()
+                    });
+                });
+                document.getElementById('userName').value = ""; 
+                alert("신청이 확정되었습니다.");
+            } catch (error) {
+                alert(error);
+            }
+        }
+
+        // 엔터키 처리
+        document.getElementById('userName').addEventListener('keypress', function (e) {
+            if (e.key === 'Enter') this.blur();
+        });
+        document.getElementById('inputBtn').addEventListener('click', function() {
+            document.getElementById('userName').focus();
+        });
+    </script>
+</body>
+</html>
