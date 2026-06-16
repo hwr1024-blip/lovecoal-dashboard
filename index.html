@@ -3,52 +3,57 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>현장 활동 참여 신청 대시보드</title>
+    <title>따봉 활동지역 실시간 입력보드</title>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
     <style>
-        /* 기본 스타일: 흰색 배경, 검은색 폰트 */
         * { box-sizing: border-box; margin: 0; padding: 0; }
-        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; background-color: #FFFFFF; color: #000000; padding: 20px 15px; line-height: 1.4; }
-        h2 { text-align: center; font-size: 1.2rem; font-weight: 700; margin-bottom: 15px; letter-spacing: -0.5px; }
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif; background-color: #FFFFFF; color: #000000; padding: 20px 15px; line-height: 1.4; }
+        h2 { text-align: center; font-size: 1.3rem; font-weight: 700; margin-bottom: 20px; letter-spacing: -0.5px; }
         
-        /* 상단 미리보기 */
-        .preview-container { width: 100%; margin-bottom: 30px; border-top: 2px solid #000000; overflow-x: auto; }
+        /* 표 모서리 둥글게, 선 부드럽게 (소프트 UI) */
+        .preview-container { 
+            width: 100%; 
+            margin-bottom: 30px; 
+            border-radius: 12px; 
+            overflow: hidden; 
+            box-shadow: 0 4px 12px rgba(0,0,0,0.06); 
+            border: 1px solid #E4E4E7; 
+        }
         table { width: 100%; table-layout: fixed; border-collapse: collapse; font-size: clamp(9px, 2.3vw, 13px); text-align: center; }
-        th, td { border-bottom: 1px solid #E4E4E7; border-right: 1px solid #E4E4E7; padding: 8px 2px; height: 38px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-        th { background-color: #F4F4F5; font-weight: 700; border-bottom: 1px solid #A1A1AA; }
+        th, td { padding: 10px 2px; height: 42px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; border-bottom: 1px solid #F0F0F0; border-right: 1px solid #F0F0F0; }
+        th { background-color: #FAFAFA; font-weight: 700; color: #333; }
         td:last-child, th:last-child { border-right: none; }
+        
         .cell-empty { background-color: #FFFFFF; }
         .cell-filled { background-color: #FFFBEB; font-weight: bold; }
-        .cell-blocked { background-color: #EF4444; color: #FFFFFF; }
+        /* 붉은색 대신 지정해주신 주황색으로 변경 */
+        .cell-blocked { background-color: #FF7F00; color: #FFFFFF; }
 
-        /* 컨트롤 영역 */
         .controls { max-width: 440px; margin: 0 auto 25px; display: flex; flex-direction: column; gap: 12px; }
         .input-group { display: flex; gap: 8px; }
-        input[type="text"], select { flex: 1; padding: 12px; border: 1px solid #000000; border-radius: 4px; font-size: 15px; outline: none; background-color: #FFFFFF; color: #000000; }
-        button.action-btn { padding: 0 24px; background-color: #000000; color: #FFFFFF; border: 1px solid #000000; border-radius: 4px; font-size: 15px; font-weight: 700; cursor: pointer; }
+        input[type="text"], select { flex: 1; padding: 14px; border: 1px solid #E4E4E7; border-radius: 8px; font-size: 15px; outline: none; background-color: #FFFFFF; transition: border 0.2s; }
+        input[type="text"]:focus, select:focus { border-color: #111; }
+        button.action-btn { padding: 0 24px; background-color: #111; color: #FFFFFF; border: none; border-radius: 8px; font-size: 15px; font-weight: 700; cursor: pointer; transition: 0.2s; }
         
-        /* 상세 리스트 */
         .slots-container { max-width: 440px; margin: 0 auto; display: flex; flex-direction: column; gap: 8px; }
-        .slot-row { display: flex; justify-content: space-between; align-items: center; padding: 12px 16px; border: 1px solid #E4E4E7; border-radius: 6px; font-size: 15px; background-color: #FFFFFF; }
+        /* 리스트도 둥글게 */
+        .slot-row { display: flex; align-items: center; padding: 14px 16px; border: 1px solid #E4E4E7; border-radius: 8px; font-size: 15px; background-color: #FFFFFF; }
         .slot-filled { background-color: #FFFBEB; border-color: #FDE68A; }
-        .slot-blocked { background-color: #EF4444; border-color: #EF4444; color: #FFFFFF; }
-        .slot-btn { background-color: #000000; color: #FFFFFF; border: 1px solid #000000; padding: 8px 16px; border-radius: 4px; font-size: 14px; font-weight: 700; cursor: pointer; }
-        .slot-btn:disabled { background-color: transparent; border-color: transparent; color: #71717A; cursor: not-allowed; }
-        .slot-blocked .slot-btn:disabled { color: #FFFFFF; opacity: 0.9; }
-        .info-text { text-align: center; font-size: 11px; color: #71717A; margin-top: 20px; }
+        .slot-blocked { background-color: #FF7F00; border-color: #FF7F00; color: #FFFFFF; }
+        .info-text { text-align: center; font-size: 11px; color: #71717A; margin-top: 25px; }
     </style>
 </head>
 <body>
 
-    <h2>전체 현황 미리보기</h2>
+    <h2>따봉 활동지역 실시간 입력보드</h2>
     <div class="preview-container">
         <table id="previewTable"></table>
     </div>
 
     <div class="controls">
         <div class="input-group">
-            <input type="text" id="userName" placeholder="참여자 이름 입력">
+            <input type="text" id="userName" placeholder="참여자 이름 입력 (입력 후 엔터)">
             <button class="action-btn" id="inputBtn">입력</button>
         </div>
         <select id="regionSelect" onchange="renderSlots()">
@@ -60,7 +65,6 @@
     <p class="info-text">※ 확정된 이름(미색)은 수정이 불가능합니다.</p>
 
     <script>
-        // 파이어베이스 고유 열쇠 연결
         const firebaseConfig = {
             apiKey: "AIzaSyBJanaTDh4Z_J4wXYydOJF_zBWTRI1tjyk",
             authDomain: "lovecoal-reservations.firebaseapp.com",
@@ -78,7 +82,6 @@
         let currentData = {};
         let blockedCells = []; 
 
-        // 관리자 설정 실시간 불러오기
         db.collection("settings").doc("config").onSnapshot((doc) => {
             if (doc.exists) {
                 regions = doc.data().regions || [];
@@ -98,7 +101,6 @@
             renderSlots();
         });
 
-        // 예약 현황 실시간 불러오기
         db.collection("reservations").onSnapshot((snapshot) => {
             currentData = {};
             blockedCells = [];
@@ -122,7 +124,7 @@
             let thead = document.createElement('tr');
             regions.forEach(region => {
                 let th = document.createElement('th');
-                th.innerText = region;
+                th.innerText = region.split('_').pop(); 
                 thead.appendChild(th);
             });
             table.appendChild(thead);
@@ -147,6 +149,7 @@
             }
         }
 
+        // 버튼 제거하고 텍스트만 깔끔하게 출력
         function renderSlots() {
             const container = document.getElementById('slotsContainer');
             container.innerHTML = "";
@@ -159,49 +162,75 @@
                 
                 if (blockedCells.includes(slotId)) {
                     row.className = 'slot-row slot-blocked';
-                    row.innerHTML = `<span><b>${i}</b>. 입력 불가</span><button class="slot-btn" disabled>제한</button>`;
+                    row.innerHTML = `<span><b>${i}</b>. 입력 불가</span>`;
                 } else if (currentData[slotId]) {
                     row.className = 'slot-row slot-filled';
-                    row.innerHTML = `<span><b>${i}</b>. ${currentData[slotId]}</span><button class="slot-btn" disabled>확정</button>`;
+                    row.innerHTML = `<span><b>${i}</b>. ${currentData[slotId]}</span>`;
                 } else {
                     row.className = 'slot-row';
-                    row.innerHTML = `<span><b>${i}</b>. 비어있음</span><button class="slot-btn" onclick="reserveSlot('${slotId}')">선택</button>`;
+                    row.innerHTML = `<span><b>${i}</b>. 비어있음</span>`;
                 }
                 container.appendChild(row);
             }
         }
 
-        async function reserveSlot(slotId) {
+        // 자동 순번 찾기 및 등록 로직
+        async function autoAssignSlot() {
             const nameInput = document.getElementById('userName').value.trim();
+            const selectedRegion = document.getElementById('regionSelect').value;
+
             if (!nameInput) {
                 alert("이름을 먼저 입력해주세요!");
                 document.getElementById('userName').focus();
                 return;
             }
+            if (!selectedRegion || selectedRegion === "로딩 중...") return;
 
-            const docRef = db.collection("reservations").doc(slotId);
+            // 로컬에서 가장 빠른 빈자리 1개 탐색
+            let targetSlotId = null;
+            let targetNumber = null;
+            for (let i = 1; i <= maxSlots; i++) {
+                let sId = `${selectedRegion}_${i}`;
+                if (!blockedCells.includes(sId) && !currentData[sId]) {
+                    targetSlotId = sId;
+                    targetNumber = i;
+                    break;
+                }
+            }
+
+            // 남은 자리가 없을 경우
+            if (!targetSlotId) {
+                alert(`해당 지역은 마감되었거나 남은 자리가 없습니다.`);
+                return;
+            }
+
+            const docRef = db.collection("reservations").doc(targetSlotId);
             try {
                 await db.runTransaction(async (transaction) => {
                     const doc = await transaction.get(docRef);
-                    if (doc.exists) throw "간발의 차이로 마감되었습니다.";
+                    // 간발의 차이로 다른 사람이 먼저 엔터를 친 경우 방어
+                    if (doc.exists) throw "간발의 차이로 앞 번호가 배정되었습니다. 다시 엔터를 쳐주세요.";
                     transaction.set(docRef, { 
                         name: nameInput,
                         timestamp: firebase.firestore.FieldValue.serverTimestamp()
                     });
                 });
                 document.getElementById('userName').value = ""; 
-                alert("신청이 확정되었습니다.");
+                alert(`${targetNumber}번으로 자동 배정되었습니다.`);
             } catch (error) {
                 alert(error);
             }
         }
 
+        // 엔터키 및 버튼 클릭 이벤트 바인딩
         document.getElementById('userName').addEventListener('keypress', function (e) {
-            if (e.key === 'Enter') this.blur();
+            if (e.key === 'Enter') {
+                e.preventDefault(); // 기본 새로고침 방지
+                this.blur(); // 키보드 내리기
+                autoAssignSlot();
+            }
         });
-        document.getElementById('inputBtn').addEventListener('click', function() {
-            document.getElementById('userName').focus();
-        });
+        document.getElementById('inputBtn').addEventListener('click', autoAssignSlot);
     </script>
 </body>
 </html>
