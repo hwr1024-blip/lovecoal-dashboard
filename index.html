@@ -9,35 +9,25 @@
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; }
         body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif; background-color: #FFFFFF; color: #000000; padding: 20px 15px; line-height: 1.4; }
-        h2 { text-align: center; font-size: 1.3rem; font-weight: 700; margin-bottom: 20px; letter-spacing: -0.5px; }
+        h2 { text-align: center; font-size: 1.3rem; font-weight: 700; margin-bottom: 20px; }
         
-        /* 표 모서리 둥글게, 선 부드럽게 (소프트 UI) */
-        .preview-container { 
-            width: 100%; 
-            margin-bottom: 30px; 
-            border-radius: 12px; 
-            overflow: hidden; 
-            box-shadow: 0 4px 12px rgba(0,0,0,0.06); 
-            border: 1px solid #E4E4E7; 
-        }
+        /* 메인 오프 메시지 */
+        #offMessage { display: none; padding: 100px 20px; text-align: center; font-size: 1.2rem; font-weight: bold; color: #ef4444; }
+        #appContent { display: block; }
+
+        .preview-container { width: 100%; margin-bottom: 30px; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 12px rgba(0,0,0,0.06); border: 1px solid #E4E4E7; }
         table { width: 100%; table-layout: fixed; border-collapse: collapse; font-size: clamp(9px, 2.3vw, 13px); text-align: center; }
         th, td { padding: 10px 2px; height: 42px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; border-bottom: 1px solid #F0F0F0; border-right: 1px solid #F0F0F0; }
         th { background-color: #FAFAFA; font-weight: 700; color: #333; }
-        td:last-child, th:last-child { border-right: none; }
-        
-        .cell-empty { background-color: #FFFFFF; }
         .cell-filled { background-color: #FFFBEB; font-weight: bold; }
-        /* 붉은색 대신 지정해주신 주황색으로 변경 */
         .cell-blocked { background-color: #FF7F00; color: #FFFFFF; }
 
         .controls { max-width: 440px; margin: 0 auto 25px; display: flex; flex-direction: column; gap: 12px; }
         .input-group { display: flex; gap: 8px; }
-        input[type="text"], select { flex: 1; padding: 14px; border: 1px solid #E4E4E7; border-radius: 8px; font-size: 15px; outline: none; background-color: #FFFFFF; transition: border 0.2s; }
-        input[type="text"]:focus, select:focus { border-color: #111; }
-        button.action-btn { padding: 0 24px; background-color: #111; color: #FFFFFF; border: none; border-radius: 8px; font-size: 15px; font-weight: 700; cursor: pointer; transition: 0.2s; }
+        input[type="text"], select { flex: 1; padding: 14px; border: 1px solid #E4E4E7; border-radius: 8px; font-size: 15px; outline: none; }
+        button.action-btn { padding: 0 24px; background-color: #111; color: #FFFFFF; border: none; border-radius: 8px; font-size: 15px; font-weight: 700; cursor: pointer; }
         
         .slots-container { max-width: 440px; margin: 0 auto; display: flex; flex-direction: column; gap: 8px; }
-        /* 리스트도 둥글게 */
         .slot-row { display: flex; align-items: center; padding: 14px 16px; border: 1px solid #E4E4E7; border-radius: 8px; font-size: 15px; background-color: #FFFFFF; }
         .slot-filled { background-color: #FFFBEB; border-color: #FDE68A; }
         .slot-blocked { background-color: #FF7F00; border-color: #FF7F00; color: #FFFFFF; }
@@ -46,190 +36,116 @@
 </head>
 <body>
 
-    <h2>따봉 활동지역 실시간 입력보드</h2>
-    <div class="preview-container">
-        <table id="previewTable"></table>
-    </div>
-
-    <div class="controls">
-        <div class="input-group">
-            <input type="text" id="userName" placeholder="참여자 이름 입력 (입력 후 엔터)">
-            <button class="action-btn" id="inputBtn">입력</button>
+    <div id="offMessage">현재 활동 신청을 받지 않습니다.<br>공지사항을 확인해주세요.</div>
+    <div id="appContent">
+        <h2>따봉 활동지역 실시간 입력보드</h2>
+        <div class="preview-container"><table id="previewTable"></table></div>
+        <div class="controls">
+            <div class="input-group">
+                <input type="text" id="userName" placeholder="이름 입력 후 엔터">
+                <button class="action-btn" id="inputBtn">입력</button>
+            </div>
+            <select id="regionSelect" onchange="renderSlots()"><option>로딩 중...</option></select>
         </div>
-        <select id="regionSelect" onchange="renderSlots()">
-            <option>로딩 중...</option>
-        </select>
+        <div class="slots-container" id="slotsContainer"></div>
+        <p class="info-text">※ 확정된 이름(미색)은 수정이 불가능합니다.</p>
     </div>
-
-    <div class="slots-container" id="slotsContainer"></div>
-    <p class="info-text">※ 확정된 이름(미색)은 수정이 불가능합니다.</p>
 
     <script>
-        const firebaseConfig = {
-            apiKey: "AIzaSyBJanaTDh4Z_J4wXYydOJF_zBWTRI1tjyk",
-            authDomain: "lovecoal-reservations.firebaseapp.com",
-            projectId: "lovecoal-reservations",
-            storageBucket: "lovecoal-reservations.firebasestorage.app",
-            messagingSenderId: "543602764624",
-            appId: "1:543602764624:web:4526b9b02a800720a25a55",
-            measurementId: "G-5DRVFDSZ3N"
-        };
+        const firebaseConfig = { apiKey: "AIzaSyBJanaTDh4Z_J4wXYydOJF_zBWTRI1tjyk", authDomain: "lovecoal-reservations.firebaseapp.com", projectId: "lovecoal-reservations", storageBucket: "lovecoal-reservations.firebasestorage.app", messagingSenderId: "543602764624", appId: "1:543602764624:web:4526b9b02a800720a25a55" };
         firebase.initializeApp(firebaseConfig);
         const db = firebase.firestore();
 
-        let regions = [];
-        let maxSlots = 5;
-        let currentData = {};
-        let blockedCells = []; 
+        let regions = [], maxSlots = 5, currentData = {}, blockedCells = []; 
 
         db.collection("settings").doc("config").onSnapshot((doc) => {
-            if (doc.exists) {
-                regions = doc.data().regions || [];
-                maxSlots = doc.data().maxSlots || 5;
+            const data = doc.data();
+            // 페이지 ON/OFF 감지
+            if (data.isOpen === false) {
+                document.getElementById('offMessage').style.display = 'block';
+                document.getElementById('appContent').style.display = 'none';
+            } else {
+                document.getElementById('offMessage').style.display = 'none';
+                document.getElementById('appContent').style.display = 'block';
             }
-
+            regions = data.regions || [];
+            maxSlots = data.maxSlots || 5;
+            
             const selectEl = document.getElementById('regionSelect');
             selectEl.innerHTML = "";
-            regions.forEach(region => {
-                let opt = document.createElement('option');
-                opt.value = region;
-                opt.innerText = region;
-                selectEl.appendChild(opt);
-            });
-
-            renderPreview();
-            renderSlots();
+            regions.forEach(r => { let opt = document.createElement('option'); opt.value = r; opt.innerText = r; selectEl.appendChild(opt); });
+            renderPreview(); renderSlots();
         });
 
         db.collection("reservations").onSnapshot((snapshot) => {
-            currentData = {};
-            blockedCells = [];
+            currentData = {}; blockedCells = [];
             snapshot.forEach((doc) => {
-                const docData = doc.data();
-                if (docData.isBlocked) {
-                    blockedCells.push(doc.id);
-                } else {
-                    currentData[doc.id] = docData.name;
-                }
+                const d = doc.data();
+                if (d.isBlocked) blockedCells.push(doc.id);
+                else currentData[doc.id] = d.name;
             });
-            renderPreview();
-            renderSlots();
+            renderPreview(); renderSlots();
         });
 
         function renderPreview() {
-            const table = document.getElementById('previewTable');
-            table.innerHTML = "";
-            if (regions.length === 0) return;
-            
+            const table = document.getElementById('previewTable'); table.innerHTML = "";
             let thead = document.createElement('tr');
-            regions.forEach(region => {
-                let th = document.createElement('th');
-                th.innerText = region.split('_').pop(); 
-                thead.appendChild(th);
-            });
+            regions.forEach(r => { let th = document.createElement('th'); th.innerText = r.split('_').pop(); thead.appendChild(th); });
             table.appendChild(thead);
-
             for (let i = 1; i <= maxSlots; i++) {
                 let tr = document.createElement('tr');
-                regions.forEach(region => {
+                regions.forEach(r => {
                     let td = document.createElement('td');
-                    const slotId = `${region}_${i}`;
-                    
-                    if (blockedCells.includes(slotId)) {
-                        td.className = "cell-blocked";
-                    } else if (currentData[slotId]) {
-                        td.innerText = currentData[slotId];
-                        td.className = "cell-filled";
-                    } else {
-                        td.className = "cell-empty";
-                    }
+                    const sId = `${r}_${i}`;
+                    if (blockedCells.includes(sId)) td.className = "cell-blocked";
+                    else if (currentData[sId]) { td.innerText = currentData[sId]; td.className = "cell-filled"; }
                     tr.appendChild(td);
                 });
                 table.appendChild(tr);
             }
         }
 
-        // 버튼 제거하고 텍스트만 깔끔하게 출력
         function renderSlots() {
-            const container = document.getElementById('slotsContainer');
-            container.innerHTML = "";
-            const selectedRegion = document.getElementById('regionSelect').value;
-            if (!selectedRegion) return;
-
+            const container = document.getElementById('slotsContainer'); container.innerHTML = "";
+            const reg = document.getElementById('regionSelect').value;
             for (let i = 1; i <= maxSlots; i++) {
-                const slotId = `${selectedRegion}_${i}`;
+                const sId = `${reg}_${i}`;
                 const row = document.createElement('div');
-                
-                if (blockedCells.includes(slotId)) {
-                    row.className = 'slot-row slot-blocked';
-                    row.innerHTML = `<span><b>${i}</b>. 입력 불가</span>`;
-                } else if (currentData[slotId]) {
-                    row.className = 'slot-row slot-filled';
-                    row.innerHTML = `<span><b>${i}</b>. ${currentData[slotId]}</span>`;
-                } else {
-                    row.className = 'slot-row';
-                    row.innerHTML = `<span><b>${i}</b>. 비어있음</span>`;
-                }
+                row.className = blockedCells.includes(sId) ? 'slot-row slot-blocked' : (currentData[sId] ? 'slot-row slot-filled' : 'slot-row');
+                row.innerHTML = `<span><b>${i}</b>. ${blockedCells.includes(sId) ? '입력 불가' : (currentData[sId] || '비어있음')}</span>`;
                 container.appendChild(row);
             }
         }
 
-        // 자동 순번 찾기 및 등록 로직
         async function autoAssignSlot() {
-            const nameInput = document.getElementById('userName').value.trim();
-            const selectedRegion = document.getElementById('regionSelect').value;
+            const name = document.getElementById('userName').value.trim();
+            const reg = document.getElementById('regionSelect').value;
+            if (!name) { alert("이름을 입력해주세요!"); return; }
+            
+            // 1분 리셋 로직
+            const lastTime = localStorage.getItem('lovecoal_registered_time');
+            if (lastTime && (Date.now() - parseInt(lastTime)) < 60000) { alert("1분 후에 다시 시도해주세요."); return; }
 
-            if (!nameInput) {
-                alert("이름을 먼저 입력해주세요!");
-                document.getElementById('userName').focus();
-                return;
-            }
-            if (!selectedRegion || selectedRegion === "로딩 중...") return;
-
-            // 로컬에서 가장 빠른 빈자리 1개 탐색
-            let targetSlotId = null;
-            let targetNumber = null;
+            let targetId = null;
             for (let i = 1; i <= maxSlots; i++) {
-                let sId = `${selectedRegion}_${i}`;
-                if (!blockedCells.includes(sId) && !currentData[sId]) {
-                    targetSlotId = sId;
-                    targetNumber = i;
-                    break;
-                }
+                let sId = `${reg}_${i}`;
+                if (!blockedCells.includes(sId) && !currentData[sId]) { targetId = sId; break; }
             }
 
-            // 남은 자리가 없을 경우
-            if (!targetSlotId) {
-                alert(`해당 지역은 마감되었거나 남은 자리가 없습니다.`);
-                return;
-            }
+            if (!targetId) { alert("남은 자리가 없습니다."); return; }
 
-            const docRef = db.collection("reservations").doc(targetSlotId);
             try {
-                await db.runTransaction(async (transaction) => {
-                    const doc = await transaction.get(docRef);
-                    // 간발의 차이로 다른 사람이 먼저 엔터를 친 경우 방어
-                    if (doc.exists) throw "간발의 차이로 앞 번호가 배정되었습니다. 다시 엔터를 쳐주세요.";
-                    transaction.set(docRef, { 
-                        name: nameInput,
-                        timestamp: firebase.firestore.FieldValue.serverTimestamp()
-                    });
+                await db.runTransaction(async (t) => {
+                    if ((await t.get(db.collection("reservations").doc(targetId))).exists) throw "잠시만요! 다른 분이 먼저 배정되었습니다.";
+                    t.set(db.collection("reservations").doc(targetId), { name: name, timestamp: firebase.firestore.FieldValue.serverTimestamp() });
                 });
+                localStorage.setItem('lovecoal_registered_time', Date.now().toString());
                 document.getElementById('userName').value = ""; 
-                alert(`${targetNumber}번으로 자동 배정되었습니다.`);
-            } catch (error) {
-                alert(error);
-            }
+                alert("배정 완료되었습니다.");
+            } catch (e) { alert(e); }
         }
 
-        // 엔터키 및 버튼 클릭 이벤트 바인딩
-        document.getElementById('userName').addEventListener('keypress', function (e) {
-            if (e.key === 'Enter') {
-                e.preventDefault(); // 기본 새로고침 방지
-                this.blur(); // 키보드 내리기
-                autoAssignSlot();
-            }
-        });
+        document.getElementById('userName').addEventListener('keypress', (e) => { if (e.key === 'Enter') { e.preventDefault(); autoAssignSlot(); } });
         document.getElementById('inputBtn').addEventListener('click', autoAssignSlot);
     </script>
 </body>
