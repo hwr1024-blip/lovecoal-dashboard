@@ -65,12 +65,17 @@
             display:flex;align-items:center;justify-content:center;
             min-height:80px;color:var(--muted);font-size:14px;font-weight:700;text-align:center;
         }
-        .slot-row{display:flex;flex-direction:column;align-items:flex-start;justify-content:center;gap:4px;padding:12px 14px;border:2px solid var(--border);border-radius:16px;font-size:14px;font-weight:700;background:#FFFDF9;transition:.15s;min-height:56px;}
-        .slot-row .region-name{width:100%;font-weight:800;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
-        .slot-row .region-count{font-weight:800;color:var(--honey-dark);white-space:nowrap;font-size:13px;}
+        .slot-row{display:flex;flex-direction:column;align-items:flex-start;justify-content:center;gap:3px;padding:12px 14px;border:2px solid var(--border);border-radius:16px;background:#FFFDF9;transition:.15s;min-height:76px;}
+        .slot-row .region-name{width:100%;font-size:11.5px;font-weight:700;color:var(--muted);letter-spacing:.02em;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+        .slot-row .region-count{display:flex;align-items:baseline;gap:4px;}
+        .slot-row .count-num{font-size:26px;font-weight:900;color:var(--honey-dark);line-height:1.1;}
+        .slot-row .count-unit{font-size:11.5px;font-weight:700;color:var(--muted);white-space:nowrap;}
+        .slot-low{border-color:var(--coral);background:#FFF3F0;}
+        .slot-low .count-num{color:var(--coral);}
+        .slot-low .count-unit{color:var(--coral);}
         .slot-blocked{background:var(--coral);border-color:var(--coral);}
-        .slot-blocked .region-name,
-        .slot-blocked .region-count{color:#fff;}
+        .slot-blocked .region-name{color:rgba(255,255,255,0.85);}
+        .slot-blocked .count-num{color:#fff;font-size:19px;}
         @media (max-width:480px){
             .slots-container{grid-template-columns:repeat(auto-fill,minmax(112px,1fr));max-height:min(40vh,280px);}
         }
@@ -209,8 +214,13 @@
                 }
                 const label = r.split('_').pop();
                 const row = document.createElement('div');
-                row.className = emptyCount === 0 ? 'slot-row slot-blocked' : 'slot-row';
-                row.innerHTML = `<span class="region-name">${label}</span><span class="region-count">${emptyCount > 0 ? emptyCount + '자리 입력가능' : '마감'}</span>`;
+                if (emptyCount === 0) {
+                    row.className = 'slot-row slot-blocked';
+                    row.innerHTML = `<span class="region-name">${label}</span><span class="region-count"><b class="count-num">마감</b></span>`;
+                } else {
+                    row.className = 'slot-row' + (emptyCount <= 2 ? ' slot-low' : '');
+                    row.innerHTML = `<span class="region-name">${label}</span><span class="region-count"><b class="count-num">${emptyCount}</b><small class="count-unit">자리 입력가능</small></span>`;
+                }
                 container.appendChild(row);
             });
         }
