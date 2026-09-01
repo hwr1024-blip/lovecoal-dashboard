@@ -48,7 +48,7 @@
         button.action-btn:active{transform:scale(0.96);}
         .slots-container{
             display:grid;
-            grid-template-columns:repeat(auto-fill,minmax(140px,1fr));
+            grid-template-columns:repeat(auto-fill,minmax(128px,1fr));
             gap:10px;
             max-height:min(48vh,360px);
             overflow-y:auto;
@@ -65,19 +65,19 @@
             display:flex;align-items:center;justify-content:center;
             min-height:80px;color:var(--muted);font-size:14px;font-weight:700;text-align:center;
         }
-        .slot-row{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:14px 16px;border:2px solid var(--border);border-radius:16px;font-size:14px;font-weight:700;background:#FFFDF9;transition:.15s;min-height:52px;}
-        .slot-row .region-name{font-weight:800;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
-        .slot-row .region-count{font-weight:800;color:var(--honey-dark);white-space:nowrap;font-size:13.5px;}
+        .slot-row{display:flex;flex-direction:column;align-items:flex-start;justify-content:center;gap:4px;padding:12px 14px;border:2px solid var(--border);border-radius:16px;font-size:14px;font-weight:700;background:#FFFDF9;transition:.15s;min-height:56px;}
+        .slot-row .region-name{width:100%;font-weight:800;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+        .slot-row .region-count{font-weight:800;color:var(--honey-dark);white-space:nowrap;font-size:13px;}
         .slot-blocked{background:var(--coral);border-color:var(--coral);}
         .slot-blocked .region-name,
         .slot-blocked .region-count{color:#fff;}
         @media (max-width:480px){
-            .slots-container{grid-template-columns:repeat(auto-fill,minmax(140px,1fr));max-height:min(40vh,280px);}
+            .slots-container{grid-template-columns:repeat(auto-fill,minmax(112px,1fr));max-height:min(40vh,280px);}
         }
         @media (min-width:820px){
             .layout-grid{grid-template-columns:1fr 1fr;align-items:start;}
             .page-header h2{font-size:1.9rem;}
-            .slots-container{grid-template-columns:repeat(auto-fill,minmax(160px,1fr));max-height:min(40vh,320px);}
+            .slots-container{grid-template-columns:repeat(auto-fill,minmax(140px,1fr));max-height:min(40vh,320px);}
         }
     </style>
 </head>
