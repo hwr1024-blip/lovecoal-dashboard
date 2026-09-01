@@ -34,7 +34,7 @@
         tr:last-child td{border-bottom:none;}
         .cell-filled{background:var(--amber-bg);color:var(--amber-text);}
         .cell-blocked{background:var(--coral);color:#fff;}
-        .slot-count-note{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 18px;font-size:12.5px;font-weight:700;color:var(--honey-dark);background:#FFF3D6;border-top:2px solid var(--border);}
+        .cheer-note{display:flex;align-items:center;justify-content:center;gap:8px;padding:14px 18px;font-size:13.5px;font-weight:800;color:var(--honey-dark);background:linear-gradient(90deg,#FFF3D6,#FFE8C2);border-top:2px solid var(--border);text-align:center;}
         .layout-grid{display:grid;grid-template-columns:1fr;gap:20px;}
         .panel{background:var(--card);border:2px solid var(--border);border-radius:var(--radius);padding:22px;box-shadow:0 10px 28px rgba(245,166,35,0.1);}
         .panel-title{font-size:15px;font-weight:800;color:var(--text);margin-bottom:16px;}
@@ -113,7 +113,7 @@
                 <div class="table-scroll">
                     <table id="previewTable"></table>
                 </div>
-                <div class="slot-count-note" id="slotCountNote"></div>
+                <div class="cheer-note">🙌 이번주도 여러분의 활동을 응원합니다!</div>
             </section>
         </div>
     </div>
@@ -181,12 +181,6 @@
             renderPreview(); renderSlots();
         });
         function renderPreview() {
-            const noteEl = document.getElementById('slotCountNote');
-            if (noteEl) {
-                noteEl.innerText = maxSlots > 0
-                    ? `📅 이번 주 지역별 최대 ${maxSlots}자리 오픈`
-                    : `📅 이번 주는 오픈된 자리가 없어요`;
-            }
             const table = document.getElementById('previewTable'); table.innerHTML = "";
             let thead = document.createElement('tr');
             regions.forEach(r => { let th = document.createElement('th'); th.innerText = r.split('_').pop(); thead.appendChild(th); });
