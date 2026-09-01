@@ -3,55 +3,94 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>따봉 활동지역 실시간 입력보드</title>
+    <title>따봉 활동지역 실시간 입력보드 - 웜톤 프렌들리</title>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
     <style>
-        * { box-sizing: border-box; margin: 0; padding: 0; }
-        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif; background-color: #FFFFFF; color: #000000; padding: 20px 15px; line-height: 1.4; }
-        h2 { text-align: center; font-size: 1.3rem; font-weight: 700; margin-bottom: 20px; }
-        #offMessage { display: none; padding: 100px 20px; text-align: center; font-size: 1.2rem; font-weight: bold; color: #ef4444; }
-        #appContent { display: block; }
-        .preview-container { width: 100%; margin-bottom: 30px; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 12px rgba(0,0,0,0.06); border: 1px solid #E4E4E7; }
-        table { width: 100%; table-layout: fixed; border-collapse: collapse; font-size: clamp(9px, 2.3vw, 13px); text-align: center; }
-        th, td { padding: 10px 2px; height: 42px; border-bottom: 1px solid #F0F0F0; border-right: 1px solid #F0F0F0; }
-        th { background-color: #FAFAFA; font-weight: 700; }
-        .cell-filled { background-color: #FFFBEB; font-weight: bold; }
-        .cell-blocked { background-color: #FF7F00; color: #FFFFFF; }
-        .controls { max-width: 440px; margin: 0 auto 25px; display: flex; flex-direction: column; gap: 12px; }
-        .input-group { display: flex; gap: 8px; }
-        input[type="text"], select { flex: 1; padding: 14px; border: 1px solid #E4E4E7; border-radius: 8px; font-size: 15px; }
-        button.action-btn { padding: 0 24px; background-color: #111; color: #FFFFFF; border: none; border-radius: 8px; font-size: 15px; font-weight: 700; cursor: pointer; }
-        .slots-container { max-width: 440px; margin: 0 auto; display: flex; flex-direction: column; gap: 8px; }
-        .slot-row { display: flex; align-items: center; padding: 14px 16px; border: 1px solid #E4E4E7; border-radius: 8px; font-size: 15px; }
-        .slot-filled { background-color: #FFFBEB; border-color: #FDE68A; }
-        .slot-blocked { background-color: #FF7F00; border-color: #FF7F00; color: #FFFFFF; }
+        :root{
+            --bg:#FFF8EE; --card:#FFFFFF; --border:#F3E3C9; --text:#3D2B1F; --muted:#9A8066;
+            --honey:#F5A623; --honey-dark:#D9860A; --coral:#FF6B5B;
+            --amber-bg:#FFF3D6; --amber-border:#F5D68A; --amber-text:#8A5A00; --radius:20px;
+        }
+        *{box-sizing:border-box;margin:0;padding:0;}
+        body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Pretendard,Arial,sans-serif;background:var(--bg);color:var(--text);line-height:1.5;-webkit-font-smoothing:antialiased;}
+        #offMessage{display:none;min-height:100vh;align-items:center;justify-content:center;flex-direction:column;gap:12px;padding:40px 20px;text-align:center;font-size:1.2rem;font-weight:800;color:#E85D4A;}
+        #appContent{display:block;}
+        .page{max-width:1000px;margin:0 auto;padding:30px 16px 60px;}
+        .page-header{text-align:center;margin-bottom:26px;}
+        .live-badge{display:inline-flex;align-items:center;gap:6px;font-size:12.5px;font-weight:800;color:var(--honey-dark);background:var(--amber-bg);border:2px solid var(--amber-border);padding:5px 14px;border-radius:999px;margin-bottom:14px;}
+        .live-dot{width:7px;height:7px;border-radius:50%;background:var(--honey);animation:pulse 1.6s infinite;}
+        @keyframes pulse{0%,100%{opacity:1;}50%{opacity:.3;}}
+        .page-header h2{font-size:1.55rem;font-weight:800;letter-spacing:-0.01em;margin-bottom:8px;}
+        .page-header .subtitle{color:var(--muted);font-size:14.5px;font-weight:600;}
+        .table-card{background:var(--card);border:2px solid var(--border);border-radius:var(--radius);box-shadow:0 10px 28px rgba(245,166,35,0.12);overflow:hidden;margin-bottom:24px;}
+        .table-scroll{overflow-x:auto;-webkit-overflow-scrolling:touch;}
+        table{width:100%;min-width:660px;border-collapse:collapse;text-align:center;}
+        th{background:#FFF3D6;color:var(--honey-dark);font-size:12.5px;font-weight:800;padding:16px 8px;border-bottom:2px solid var(--border);}
+        td{padding:18px 6px;font-size:15px;font-weight:700;border-bottom:1px solid #FBEFD8;color:var(--text);height:56px;}
+        tr:last-child td{border-bottom:none;}
+        .cell-filled{background:var(--amber-bg);color:var(--amber-text);}
+        .cell-blocked{background:var(--coral);color:#fff;}
+        .layout-grid{display:grid;grid-template-columns:1fr;gap:20px;}
+        .panel{background:var(--card);border:2px solid var(--border);border-radius:var(--radius);padding:22px;box-shadow:0 10px 28px rgba(245,166,35,0.1);}
+        .panel-title{font-size:15px;font-weight:800;color:var(--text);margin-bottom:16px;}
+        .input-group{display:flex;gap:8px;margin-bottom:14px;}
+        input[type="text"]{flex:1;padding:15px 16px;border:2px solid var(--border);border-radius:14px;font-size:16px;outline:none;background:#FFFDF9;transition:.15s;}
+        input[type="text"]:focus{border-color:var(--honey);box-shadow:0 0 0 3px rgba(245,166,35,0.15);}
+        select{width:100%;padding:15px 16px;border:2px solid var(--border);border-radius:14px;font-size:16px;background:#FFFDF9;outline:none;font-weight:700;color:var(--text);}
+        select:focus{border-color:var(--honey);}
+        button.action-btn{padding:0 24px;background:var(--honey);color:#fff;border:none;border-radius:14px;font-size:15px;font-weight:800;cursor:pointer;transition:.15s;white-space:nowrap;box-shadow:0 4px 14px rgba(245,166,35,0.35);}
+        button.action-btn:hover{background:var(--honey-dark);}
+        button.action-btn:active{transform:scale(0.96);}
+        .slots-container{display:flex;flex-direction:column;gap:10px;}
+        .slot-row{display:flex;align-items:center;padding:16px 18px;border:2px solid var(--border);border-radius:16px;font-size:15px;font-weight:700;background:#FFFDF9;transition:.15s;}
+        .slot-row b{display:inline-flex;align-items:center;justify-content:center;width:24px;height:24px;border-radius:50%;background:#FBEFD8;color:var(--honey-dark);font-size:12.5px;margin-right:10px;flex-shrink:0;}
+        .slot-filled{background:var(--amber-bg);border-color:var(--amber-border);}
+        .slot-filled b{background:#F5D68A;color:var(--amber-text);}
+        .slot-blocked{background:var(--coral);border-color:var(--coral);color:#fff;}
+        .slot-blocked b{background:rgba(255,255,255,0.3);color:#fff;}
+        @media (min-width:820px){
+            .layout-grid{grid-template-columns:360px 1fr;}
+            table{min-width:100%;}
+            .page-header h2{font-size:1.9rem;}
+        }
     </style>
 </head>
 <body>
-
     <div id="offMessage">현재 활동 신청을 받지 않습니다.<br>공지사항을 확인해주세요.</div>
     <div id="appContent">
-        <h2>따봉 활동지역 실시간 입력보드</h2>
-        <div class="preview-container"><table id="previewTable"></table></div>
-        <div class="controls">
-            <div class="input-group">
-                <input type="text" id="userName" placeholder="이름 입력 후 엔터">
-                <button class="action-btn" id="inputBtn">입력</button>
-            </div>
-            <select id="regionSelect" onchange="renderSlots()"><option>로딩 중...</option></select>
+        <div class="page">
+            <header class="page-header">
+                <span class="live-badge"><span class="live-dot"></span>🐝 실시간 동기화 중</span>
+                <h2>👍 따봉 활동지역 실시간 입력보드</h2>
+                <p class="subtitle">지역을 선택하고 이름을 입력해 자리를 예약하세요</p>
+            </header>
+            <section class="table-card">
+                <div class="table-scroll">
+                    <table id="previewTable"></table>
+                </div>
+            </section>
+            <main class="layout-grid">
+                <section class="panel">
+                    <h3 class="panel-title">🙋 예약하기</h3>
+                    <div class="input-group">
+                        <input type="text" id="userName" placeholder="이름 입력 후 엔터">
+                        <button class="action-btn" id="inputBtn">입력</button>
+                    </div>
+                    <select id="regionSelect" onchange="renderSlots()"><option>로딩 중...</option></select>
+                </section>
+                <section class="panel">
+                    <h3 class="panel-title">📋 현재 자리 현황</h3>
+                    <div class="slots-container" id="slotsContainer"></div>
+                </section>
+            </main>
         </div>
-        <div class="slots-container" id="slotsContainer"></div>
     </div>
-
     <script>
         const firebaseConfig = { apiKey: "AIzaSyBJanaTDh4Z_J4wXYydOJF_zBWTRI1tjyk", authDomain: "lovecoal-reservations.firebaseapp.com", projectId: "lovecoal-reservations", storageBucket: "lovecoal-reservations.firebasestorage.app", messagingSenderId: "543602764624", appId: "1:543602764624:web:4526b9b02a800720a25a55" };
         firebase.initializeApp(firebaseConfig);
         const db = firebase.firestore();
-
-        let regions = [], maxSlots = 5, currentData = {}, blockedCells = []; 
-
-        // 마스터 양식과 완벽 동기화된 시간 포맷 함수 (yy.mm.dd am/pm hh:mm:ss)
+        let regions = [], maxSlots = 5, currentData = {}, blockedCells = [];
         function formatTime(dateObj) {
             if (!dateObj) return "";
             const y = dateObj.getFullYear().toString().slice(-2);
@@ -64,29 +103,21 @@
             const ss = dateObj.getSeconds().toString().padStart(2, '0');
             return `${y}.${m}.${day} ${ampm}${hh}:${mm}:${ss}`;
         }
-
-        // 실시간 상태 추적 및 자동 예약 처리 감지기
         db.collection("settings").doc("config").onSnapshot((doc) => {
             if (!doc.exists) return;
             const data = doc.data();
-            
-            // [핵심 보완] 예약 시간이 충족되면 데이터 무결성 트랜잭션을 기동하여 자동으로 로그 적재 및 오픈
             if (data.scheduleTime && Date.now() >= data.scheduleTime) {
                 const configRef = db.collection("settings").doc("config");
                 db.runTransaction(async (transaction) => {
                     const sfDoc = await transaction.get(configRef);
                     if (!sfDoc.exists) return;
                     const currentData = sfDoc.data();
-                    
-                    // 중복 실행 방지 검증 후 최종 시스템 로그 적재
                     if (currentData.scheduleTime && Date.now() >= currentData.scheduleTime) {
                         const timeObj = new Date();
                         const logMsg = `[시스템 ${formatTime(timeObj)}] - 자동 예약 페이지 오픈 완료`;
                         let sysLogs = currentData.systemLogs || [];
-                        
                         sysLogs.unshift({ time: timeObj.getTime(), text: logMsg });
                         if (sysLogs.length > 100) sysLogs.pop();
-                        
                         transaction.update(configRef, {
                             isOpen: true,
                             scheduleTime: null,
@@ -95,16 +126,13 @@
                     }
                 }).catch(err => console.error("자동 오토로그 생성 실패:", err));
             }
-
-            // 페이지 상태에 따른 화면 제어
             if (data.isOpen === false) {
-                document.getElementById('offMessage').style.display = 'block';
+                document.getElementById('offMessage').style.display = 'flex';
                 document.getElementById('appContent').style.display = 'none';
             } else {
                 document.getElementById('offMessage').style.display = 'none';
                 document.getElementById('appContent').style.display = 'block';
             }
-            
             regions = data.regions || [];
             maxSlots = data.maxSlots || 5;
             const selectEl = document.getElementById('regionSelect');
@@ -112,7 +140,6 @@
             regions.forEach(r => { let opt = document.createElement('option'); opt.value = r; opt.innerText = r; selectEl.appendChild(opt); });
             renderPreview(); renderSlots();
         });
-
         db.collection("reservations").onSnapshot((snapshot) => {
             currentData = {}; blockedCells = [];
             snapshot.forEach((doc) => {
@@ -122,7 +149,6 @@
             });
             renderPreview(); renderSlots();
         });
-
         function renderPreview() {
             const table = document.getElementById('previewTable'); table.innerHTML = "";
             let thead = document.createElement('tr');
@@ -140,7 +166,6 @@
                 table.appendChild(tr);
             }
         }
-
         function renderSlots() {
             const container = document.getElementById('slotsContainer'); container.innerHTML = "";
             const reg = document.getElementById('regionSelect').value;
@@ -152,33 +177,28 @@
                 container.appendChild(row);
             }
         }
-
         async function autoAssignSlot() {
             const name = document.getElementById('userName').value.trim();
             const reg = document.getElementById('regionSelect').value;
             if (!name) { alert("이름을 입력해주세요!"); return; }
-            
             const lastTime = localStorage.getItem('lovecoal_registered_time');
             if (lastTime && (Date.now() - parseInt(lastTime)) < 60000) { alert("1분 후에 다시 시도해주세요."); return; }
-
             let targetId = null;
             for (let i = 1; i <= maxSlots; i++) {
                 let sId = `${reg}_${i}`;
                 if (!blockedCells.includes(sId) && !currentData[sId]) { targetId = sId; break; }
             }
             if (!targetId) { alert("자리가 없습니다."); return; }
-
             try {
                 await db.runTransaction(async (t) => {
                     if ((await t.get(db.collection("reservations").doc(targetId))).exists) throw "이미 차있습니다.";
                     t.set(db.collection("reservations").doc(targetId), { name: name, timestamp: firebase.firestore.FieldValue.serverTimestamp() });
                 });
                 localStorage.setItem('lovecoal_registered_time', Date.now().toString());
-                document.getElementById('userName').value = ""; 
+                document.getElementById('userName').value = "";
                 alert("성공!");
             } catch (e) { alert(e); }
         }
-
         document.getElementById('userName').addEventListener('keypress', (e) => { if (e.key === 'Enter') autoAssignSlot(); });
         document.getElementById('inputBtn').addEventListener('click', autoAssignSlot);
     </script>
