@@ -23,14 +23,18 @@
         @keyframes pulse{0%,100%{opacity:1;}50%{opacity:.3;}}
         .page-header h2{font-size:1.55rem;font-weight:800;letter-spacing:-0.01em;margin-bottom:8px;}
         .page-header .subtitle{color:var(--muted);font-size:14.5px;font-weight:600;}
-        .table-card{background:var(--card);border:2px solid var(--border);border-radius:var(--radius);box-shadow:0 10px 28px rgba(245,166,35,0.12);overflow:hidden;margin-bottom:24px;}
-        .table-scroll{overflow-x:auto;-webkit-overflow-scrolling:touch;}
-        table{width:100%;min-width:660px;border-collapse:collapse;text-align:center;}
-        th{background:#FFF3D6;color:var(--honey-dark);font-size:12.5px;font-weight:800;padding:16px 8px;border-bottom:2px solid var(--border);}
-        td{padding:18px 6px;font-size:15px;font-weight:700;border-bottom:1px solid #FBEFD8;color:var(--text);height:56px;}
+        .table-card{background:var(--card);border:2px solid var(--border);border-radius:var(--radius);box-shadow:0 10px 28px rgba(245,166,35,0.12);overflow:hidden;margin-top:24px;}
+        .table-scroll{overflow:auto;-webkit-overflow-scrolling:touch;max-height:min(58vh,420px);}
+        .table-scroll::-webkit-scrollbar{width:8px;height:8px;}
+        .table-scroll::-webkit-scrollbar-thumb{background:var(--amber-border);border-radius:8px;}
+        .table-scroll::-webkit-scrollbar-track{background:transparent;}
+        table{width:100%;border-collapse:collapse;text-align:center;}
+        th{position:sticky;top:0;z-index:2;background:#FFF3D6;color:var(--honey-dark);font-size:13px;font-weight:800;padding:10px 4px;min-width:56px;border-bottom:2px solid var(--border);box-shadow:0 2px 0 rgba(245,166,35,0.08);}
+        td{padding:10px 4px;font-size:17px;font-weight:800;border-bottom:1px solid #FBEFD8;color:var(--text);height:44px;min-width:56px;}
         tr:last-child td{border-bottom:none;}
         .cell-filled{background:var(--amber-bg);color:var(--amber-text);}
         .cell-blocked{background:var(--coral);color:#fff;}
+        .slot-count-note{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 18px;font-size:12.5px;font-weight:700;color:var(--honey-dark);background:#FFF3D6;border-top:2px solid var(--border);}
         .layout-grid{display:grid;grid-template-columns:1fr;gap:20px;}
         .panel{background:var(--card);border:2px solid var(--border);border-radius:var(--radius);padding:22px;box-shadow:0 10px 28px rgba(245,166,35,0.1);}
         .panel-title{font-size:15px;font-weight:800;color:var(--text);margin-bottom:16px;}
@@ -42,17 +46,38 @@
         button.action-btn{padding:0 24px;background:var(--honey);color:#fff;border:none;border-radius:14px;font-size:15px;font-weight:800;cursor:pointer;transition:.15s;white-space:nowrap;box-shadow:0 4px 14px rgba(245,166,35,0.35);}
         button.action-btn:hover{background:var(--honey-dark);}
         button.action-btn:active{transform:scale(0.96);}
-        .slots-container{display:flex;flex-direction:column;gap:10px;}
-        .slot-row{display:flex;align-items:center;padding:16px 18px;border:2px solid var(--border);border-radius:16px;font-size:15px;font-weight:700;background:#FFFDF9;transition:.15s;}
-        .slot-row b{display:inline-flex;align-items:center;justify-content:center;width:24px;height:24px;border-radius:50%;background:#FBEFD8;color:var(--honey-dark);font-size:12.5px;margin-right:10px;flex-shrink:0;}
-        .slot-filled{background:var(--amber-bg);border-color:var(--amber-border);}
-        .slot-filled b{background:#F5D68A;color:var(--amber-text);}
-        .slot-blocked{background:var(--coral);border-color:var(--coral);color:#fff;}
-        .slot-blocked b{background:rgba(255,255,255,0.3);color:#fff;}
+        .slots-container{
+            display:grid;
+            grid-template-columns:repeat(auto-fill,minmax(140px,1fr));
+            gap:10px;
+            max-height:min(48vh,360px);
+            overflow-y:auto;
+            padding-right:4px;
+            align-content:start;
+        }
+        .slots-container::-webkit-scrollbar{width:8px;}
+        .slots-container::-webkit-scrollbar-thumb{background:var(--amber-border);border-radius:8px;}
+        .slots-container::-webkit-scrollbar-track{background:transparent;}
+        .slots-container:empty{min-height:80px;}
+        .slots-container:empty::after{
+            content:"등록된 지역이 없어요";
+            grid-column:1/-1;
+            display:flex;align-items:center;justify-content:center;
+            min-height:80px;color:var(--muted);font-size:14px;font-weight:700;text-align:center;
+        }
+        .slot-row{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:14px 16px;border:2px solid var(--border);border-radius:16px;font-size:14px;font-weight:700;background:#FFFDF9;transition:.15s;min-height:52px;}
+        .slot-row .region-name{font-weight:800;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+        .slot-row .region-count{font-weight:800;color:var(--honey-dark);white-space:nowrap;font-size:13.5px;}
+        .slot-blocked{background:var(--coral);border-color:var(--coral);}
+        .slot-blocked .region-name,
+        .slot-blocked .region-count{color:#fff;}
+        @media (max-width:480px){
+            .slots-container{grid-template-columns:repeat(auto-fill,minmax(140px,1fr));max-height:min(40vh,280px);}
+        }
         @media (min-width:820px){
-            .layout-grid{grid-template-columns:360px 1fr;}
-            table{min-width:100%;}
+            .layout-grid{grid-template-columns:1fr 1fr;align-items:start;}
             .page-header h2{font-size:1.9rem;}
+            .slots-container{grid-template-columns:repeat(auto-fill,minmax(160px,1fr));max-height:min(40vh,320px);}
         }
     </style>
 </head>
@@ -65,12 +90,11 @@
                 <h2>👍 따봉 활동지역 실시간 입력보드</h2>
                 <p class="subtitle">지역을 선택하고 이름을 입력해 자리를 예약하세요</p>
             </header>
-            <section class="table-card">
-                <div class="table-scroll">
-                    <table id="previewTable"></table>
-                </div>
-            </section>
             <main class="layout-grid">
+                <section class="panel">
+                    <h3 class="panel-title">📋 현재 자리 현황</h3>
+                    <div class="slots-container" id="slotsContainer"></div>
+                </section>
                 <section class="panel">
                     <h3 class="panel-title">🙋 예약하기</h3>
                     <div class="input-group">
@@ -79,11 +103,13 @@
                     </div>
                     <select id="regionSelect" onchange="renderSlots()"><option>로딩 중...</option></select>
                 </section>
-                <section class="panel">
-                    <h3 class="panel-title">📋 현재 자리 현황</h3>
-                    <div class="slots-container" id="slotsContainer"></div>
-                </section>
             </main>
+            <section class="table-card">
+                <div class="table-scroll">
+                    <table id="previewTable"></table>
+                </div>
+                <div class="slot-count-note" id="slotCountNote"></div>
+            </section>
         </div>
     </div>
     <script>
@@ -150,6 +176,12 @@
             renderPreview(); renderSlots();
         });
         function renderPreview() {
+            const noteEl = document.getElementById('slotCountNote');
+            if (noteEl) {
+                noteEl.innerText = maxSlots > 0
+                    ? `📅 이번 주 지역별 최대 ${maxSlots}자리 오픈`
+                    : `📅 이번 주는 오픈된 자리가 없어요`;
+            }
             const table = document.getElementById('previewTable'); table.innerHTML = "";
             let thead = document.createElement('tr');
             regions.forEach(r => { let th = document.createElement('th'); th.innerText = r.split('_').pop(); thead.appendChild(th); });
@@ -167,15 +199,20 @@
             }
         }
         function renderSlots() {
+            // 지역별 "N자리 입력가능" 요약 카드 렌더링 (선택된 지역과 무관하게 전체 지역을 보여줌)
             const container = document.getElementById('slotsContainer'); container.innerHTML = "";
-            const reg = document.getElementById('regionSelect').value;
-            for (let i = 1; i <= maxSlots; i++) {
-                const sId = `${reg}_${i}`;
+            regions.forEach(r => {
+                let emptyCount = 0;
+                for (let i = 1; i <= maxSlots; i++) {
+                    const sId = `${r}_${i}`;
+                    if (!blockedCells.includes(sId) && !currentData[sId]) emptyCount++;
+                }
+                const label = r.split('_').pop();
                 const row = document.createElement('div');
-                row.className = blockedCells.includes(sId) ? 'slot-row slot-blocked' : (currentData[sId] ? 'slot-row slot-filled' : 'slot-row');
-                row.innerHTML = `<span><b>${i}</b>. ${blockedCells.includes(sId) ? '입력 불가' : (currentData[sId] || '비어있음')}</span>`;
+                row.className = emptyCount === 0 ? 'slot-row slot-blocked' : 'slot-row';
+                row.innerHTML = `<span class="region-name">${label}</span><span class="region-count">${emptyCount > 0 ? emptyCount + '자리 입력가능' : '마감'}</span>`;
                 container.appendChild(row);
-            }
+            });
         }
         async function autoAssignSlot() {
             const name = document.getElementById('userName').value.trim();
@@ -183,21 +220,32 @@
             if (!name) { alert("이름을 입력해주세요!"); return; }
             const lastTime = localStorage.getItem('lovecoal_registered_time');
             if (lastTime && (Date.now() - parseInt(lastTime)) < 60000) { alert("1분 후에 다시 시도해주세요."); return; }
-            let targetId = null;
+
+            // 1번부터 순서대로 빈자리를 자동으로 찾아 배정. 동시입력으로 특정 번호를 놓치면
+            // (트랜잭션 실패) 알림 없이 곧바로 다음 번호로 넘어가 재시도한다.
+            // 선택한 지역의 모든 번호가 다 찬 경우에만 최종 실패 알림을 띄운다.
+            let success = false;
             for (let i = 1; i <= maxSlots; i++) {
-                let sId = `${reg}_${i}`;
-                if (!blockedCells.includes(sId) && !currentData[sId]) { targetId = sId; break; }
+                const sId = `${reg}_${i}`;
+                if (blockedCells.includes(sId) || currentData[sId]) continue; // 로컬 캐시 기준 이미 찬 번호는 건너뜀 (최적화용)
+                try {
+                    await db.runTransaction(async (t) => {
+                        if ((await t.get(db.collection("reservations").doc(sId))).exists) throw "이미 차있습니다.";
+                        t.set(db.collection("reservations").doc(sId), { name: name, timestamp: firebase.firestore.FieldValue.serverTimestamp() });
+                    });
+                    success = true;
+                    break;
+                } catch (e) {
+                    continue; // 이 번호는 그 사이 다른 사람이 채감. 다음 번호로 자동 재시도.
+                }
             }
-            if (!targetId) { alert("자리가 없습니다."); return; }
-            try {
-                await db.runTransaction(async (t) => {
-                    if ((await t.get(db.collection("reservations").doc(targetId))).exists) throw "이미 차있습니다.";
-                    t.set(db.collection("reservations").doc(targetId), { name: name, timestamp: firebase.firestore.FieldValue.serverTimestamp() });
-                });
+            if (success) {
                 localStorage.setItem('lovecoal_registered_time', Date.now().toString());
                 document.getElementById('userName').value = "";
                 alert("성공!");
-            } catch (e) { alert(e); }
+            } else {
+                alert("자리가 없습니다.");
+            }
         }
         document.getElementById('userName').addEventListener('keypress', (e) => { if (e.key === 'Enter') autoAssignSlot(); });
         document.getElementById('inputBtn').addEventListener('click', autoAssignSlot);
